@@ -1,3 +1,3 @@
-# dl_p4wn_eu
+# dl.p4wn.eu
 
 Source code for my website dl.p4wn.eu

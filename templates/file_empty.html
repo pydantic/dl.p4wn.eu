@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container-sm" style="max-width: 750px;">
+    <button onclick="goBack()" class="btn btn-link my-2 pl-0"><i class="fas fa-arrow-left"></i>&nbsp;Back</button>
+    <div class="container py-2">
+        <h2>View file - <span class="text-muted">{{ file_name }}</span></h2>
+    </div>
+
+    <div class="container-sm py-5">
+        <p>
+            <span class="text-danger">There is nothing to display.</span><br>
+            The file is empty...
+        </p>
+    </div>
+</div>
+
+<script>
+    function goBack() {
+        window.history.back();
+    }
+</script>
+
+{% endblock %}

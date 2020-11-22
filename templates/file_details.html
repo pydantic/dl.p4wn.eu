@@ -1,8 +1,13 @@
 {% extends 'base.html' %}
+
+{% block head %}
+<meta name="description" content="Download or view '{{ file_name }}'">
+{% endblock %}
+
 {% block content %}
 
 <div class="container-sm" style="max-width: 750px;">
-
+    <button onclick="goBack()" class="btn btn-link my-2 pl-0"><i class="fas fa-arrow-left"></i>&nbsp;Back</button>
     <div id="captcha-alert" class="hidden alert alert-danger alert-dismissible fade show m-3" role="alert">
         Captcha required!
         <button type="button" class="close" aria-label="Close" onclick="hideAlert()">
@@ -21,16 +26,15 @@
                 <i class="{{ icon }}"></i>
             </div>
             <div class="col-md">
-                <ul class="no-bullets m-4">
+                <ul class="list-unstyled m-4">
                     <strong>
                         <li>Name: {{ file_name }}</li>
                         <li>Type: {{ file_type }}</li>
                     </strong>
-                    <span class="text-muted">
-                        <li>Encoding: {{ file_encoding }}</li>
-                        <li>Size: {{ file_size }}</li>
-                        <li>Date of creation: {{ creation_date }}</li>
-                    </span>
+                    <li>Encoding: <span class="text-muted">{{ file_encoding }}</span></li>
+                    <li>Size: <span class="text-muted">{{ file_size }}</span></li>
+                    <li>Date of creation: <span class="text-muted">{{ creation_date }}</span></li>
+                    md5sum: <span style="color: grey;">{{ md5sum }}</span>
                 </ul>
             </div>
         </div>
@@ -63,13 +67,23 @@
         }
         $('html, body').animate({ scrollTop: 0 }, 'slow');
     }
+    function reloadCaptcha() {
+        document.location.reload(true);
+    }
     function correctCaptcha(response) {
         $('#download').attr('href', "{{ BASE_URL }}download/{{ file_name }}?captcha_token=" + response);
-        $('#view-file').attr('href', "{{ BASE_URL }}edit/{{ file_name }}?captcha_token=" + response);
+        $('#view-file').attr('href', "{{ BASE_URL }}view/{{ file_name }}?captcha_token=" + response);
+        $('#download').attr('onclick', "reloadCaptcha();");
         $('#download').attr('download', true);
         $('#view-file').attr('type', "{{ file_type }}");
         $('#download').attr('type', "{{ file_type }}");
     };
+</script>
+
+<script>
+    function goBack() {
+        window.history.back();
+    }
 </script>
 
 {% endblock %}

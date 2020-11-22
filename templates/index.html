@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container-sm p-2" style="max-width: 750px;">
+    <div class="container p-2">
+        <h3 class="m-2">Welcome to p4wn.eu downloads page</h3>
+        <div class="container py-2 px-4">
+            <p>
+                This is an API I wrote for fun, it serves for uploading files (only if you have a password
+                which&nbsp;-&nbsp;as of now&nbsp;-&nbsp;only I have) and downloading them.
+            </p>
+            <a href="/upload" class="btn btn-link m-2">Uploading files</a>
+            <a href="/browse-files" class="btn btn-link m-2">Browse uploaded files</a>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

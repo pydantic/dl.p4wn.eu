@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container-sm p-2" style="max-width: 750px;">
+    <button onclick="goBack()" class="btn btn-link my-2 pl-0"><i class="fas fa-arrow-left"></i>&nbsp;Back</button>
+    <div class="container p-2">
+        <h3 class="m-2">Upload a file</h3>
+        <p class="text-danger py-2 px-4">
+            Sorry, but as of yet you can only post a file if you have a password.
+            Currently there is no way for you to get a password.
+        </p>
+        <form action="/upload" method="POST">
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" class="form-control" id="password" placeholder="Password">
+                <input type="file" id="actual-btn" name="filename" class="btn btn-dark" hidden>
+                <label for="actual-btn" class="btn-lg btn-dark m-3 py-2 px-3">Choose File</label>
+                <span id="file-chosen">No file chosen</span>
+                <br><br>
+                <input type="submit" value="Upload" class="btn-lg btn-primary btn-block">
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    function goBack() {
+        window.history.back();
+    }
+
+
+    const actualBtn = document.getElementById('actual-btn');
+
+    const fileChosen = document.getElementById('file-chosen');
+
+    actualBtn.addEventListener('change', function () {
+        fileChosen.textContent = this.files[0].name
+    })
+</script>
+
+{% endblock %}

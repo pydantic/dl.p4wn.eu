@@ -6,38 +6,35 @@ __license__ = "MIT License"
 
 
 # -- Imports --
-from fastapi import FastAPI, HTTPException, Request, File, UploadFile
-from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse
-from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
-from typing import Optional
-from pydantic import BaseModel
-import sys
-import os.path
-from requests import post
-import time
-import mimetypes
-import json
 import hashlib
+import json
+import mimetypes
+import os.path
+import sys
+import time
+from datetime import datetime
+from typing import Optional
+
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
+from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.templating import Jinja2Templates
+from requests import post
 # -------------
 
 
 app = FastAPI(
     title="File downloading API",
-    description="Backend API for downloading files, with captcha protection"
+    description="Backend API for downloading files and more, with captcha protection"
 )
 
 # Templates directory
 templates = Jinja2Templates(directory="templates")
 
-app.mount(
-    "/static", StaticFiles(directory="static"), name="static")
-
 # -- Constants --
-BASE_URL = "https://dl.p4wn.eu/"
+BASE_URL = "https://p4wn.eu/"
 
 SITE_KEY = "6Lezv-MZAAAAAHTFigO2zL-lJPgejkyDYDM-I_dt"
-SECRET_KEY = "****************************************"
+SECRET_KEY = "6Lezv-MZAAAAAOc8RINviafOLS01oIIEeZ7vUusc"
 
 # Defined units
 UNITS_MAPPING = [
@@ -180,12 +177,14 @@ def md5sum(file):
 # ---------------
 
 
-# -- Paths --
+# == Paths ==
 
 # -- Root --
 @app.get("/")
-async def get_root():
-    return PlainTextResponse("No")
+async def get_root(request: Request):
+    return templates.TemplateResponse("index.html", {
+        "request": request,
+    })
 
 
 @app.get("/favicon.ico")
@@ -202,48 +201,24 @@ async def get_license(request: Request):
 
 
 # -- Uploading files --
-# @app.post("/upload")
-# async def upload_file(file: UploadFile = File()):
-#    return "a"
-# ---------------------
-
-
-# -- Downloading and viewing files --
-@app.get("/{file}")
-async def file_details(request: Request, file: str):
-    # Check if the file exists
-    if not os.path.isfile("files/" + file):
-        return templates.TemplateResponse("file_not_found.html", {
-            "file_name": file,
-            "request": request
-        })
-
-    file_type = get_type(file)
-    icon = get_icon(file_type)
-    file_encoding = mimetypes.guess_type("files/" + file)[1]
-    if file_encoding is None:
-        file_encoding = "None"
-    if file_type != "Unknown":
-        file_type = file_type[0]
-    file_size = get_size(file)
-    creation_date = get_creation_date(file)
-    try:
-        integrity = md5sum(file)
-    except:
-        integrity = "Error"
-
-    return templates.TemplateResponse("file_details.html", {
+@app.get("/upload")
+async def upload_page(request: Request):
+    return templates.TemplateResponse("upload_file.html", {
         "request": request,
-        "BASE_URL": BASE_URL,
-        "SITE_KEY": SITE_KEY,
-        "icon": icon,
-        "file_name": file,
-        "file_type": file_type,
-        "file_encoding": file_encoding,
-        "file_size": file_size,
-        "creation_date": creation_date,
-        "md5sum": integrity
     })
+
+
+@app.post("/postfile")
+async def post_file(
+    file: UploadFile = File(...),
+    token: str = Form(...)
+):
+    return {
+        "file_size": len(file),
+        "token": token,
+        "file_type": file.content_type
+    }
+# ---------------------
 
 
 @app.get("/download/{file}")
@@ -275,16 +250,122 @@ async def view_file(request: Request, file: str, captcha_token: str):
     if not verify_captcha(captcha_token):
         raise HTTPException(status_code=403, detail="Captcha token invalid")
 
-    # If everything matches up
-    file_content = open("files/" + file, "r")
-    file_content = file_content.read()
+    # If everything matches up try to read the file
+    try:
+        file_size = os.path.getsize("files/" + file)
+    except:
+        file_size = "Unknown"
 
-    return templates.TemplateResponse("view_file.html", {
+    if file_size == "Unknown":
+        return templates.TemplateResponse("cannot_view_file.html", {
+            "request": request,
+            "file_name": file,
+        })
+
+    # Check if the file isn't empty
+    if file_size == 0:
+        return templates.TemplateResponse("file_empty.html", {
+            "request": request,
+            "file_name": file,
+        })
+
+    # Check if the file isn't too big
+    if file_size > 10000:
+        try:
+            file_content = open("files/" + file, "r")
+            file_content_short = None
+            for line in range(300):
+                line = file.readline()
+                if line.len() > 300:
+                    line = line[:300] + " ..."
+                    file_content_short + "\n" + line
+                else:
+                    file_content_short + "\n" + line
+                file_content_short + "\n" + "..."
+        except:
+            return templates.TemplateResponse("cannot_view_file.html", {
+                "request": request,
+                "file_name": file,
+            })
+        return templates.TemplateResponse("view_file.html", {
+            "request": request,
+            "file_name": file,
+            "file_content": file_content_short
+        })
+
+    else:
+        try:
+            file_content = open("files/" + file, "r")
+            file_content = file_content.read()
+        except:
+            return templates.TemplateResponse("cannot_view_file.html", {
+                "request": request,
+                "file_name": file,
+            })
+        return templates.TemplateResponse("view_file.html", {
+            "request": request,
+            "file_name": file,
+            "file_content": file_content
+        })
+
+
+@app.get("/browse-files")
+async def browse_files(request: Request):
+    files = os.listdir("files")
+
+    if not files:  # If the files directory is empty
+        return templates.TemplateResponse("browse_files_empty.html", {
+            "request": request
+        })
+
+    files = dict.fromkeys(files, [])
+
+    for file in files:
+        icon = get_icon(get_type(file))
+        files[file] = icon
+
+    return templates.TemplateResponse("browse_files.html", {
         "request": request,
-        "file_name": file,
-        "file_content": file_content
+        "files": files
     })
-# -----------------------------------
 
 
-# -----------
+# ===========
+
+@app.get("/{file}")
+async def file_details(request: Request, file: str):
+    # Check if the file exists
+    if not os.path.isfile("files/" + file):
+        timestamp = datetime.now()
+        return templates.TemplateResponse("file_not_found.html", {
+            "file_name": file,
+            "request": request,
+            "timestamp": timestamp
+        })
+
+    file_type = get_type(file)
+    icon = get_icon(file_type)
+    file_encoding = mimetypes.guess_type("files/" + file)[1]
+    if file_encoding is None:
+        file_encoding = "None"
+    if file_type != "Unknown":
+        file_type = file_type[0]
+    file_size = get_size(file)
+    creation_date = get_creation_date(file)
+    try:
+        integrity = md5sum(file)
+    except:
+        integrity = "Error"
+
+    return templates.TemplateResponse("file_details.html", {
+        "request": request,
+        "BASE_URL": BASE_URL,
+        "SITE_KEY": SITE_KEY,
+        "icon": icon,
+        "file_name": file,
+        "file_type": file_type,
+        "file_encoding": file_encoding,
+        "file_size": file_size,
+        "creation_date": creation_date,
+        "md5sum": integrity
+    })

@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<div class="container-sm p-2" style="max-width: 750px;">
+    <button onclick="goBack()" class="btn btn-link my-2 pl-0"><i class="fas fa-arrow-left"></i>&nbsp;Back</button>
+    <div class="container p-2">
+        <h3 class="m-2">Files present on server:</h3>
+        <div class="container py-2 px-4">
+            <ul class="list-unstyled">
+                {% for file in files %}
+                <li class="p-2">
+                    <a href="/{{ file }}">
+                        <i class="{{ files[file] }} text-info"></i>&nbsp;{{ file }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+    function goBack() {
+        window.history.back();
+    }
+</script>
+
+{% endblock %}

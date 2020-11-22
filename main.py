@@ -34,7 +34,7 @@ templates = Jinja2Templates(directory="templates")
 BASE_URL = "https://p4wn.eu/"
 
 SITE_KEY = "6Lezv-MZAAAAAHTFigO2zL-lJPgejkyDYDM-I_dt"
-SECRET_KEY = "6Lezv-MZAAAAAOc8RINviafOLS01oIIEeZ7vUusc"
+SECRET_KEY = "****************************************"
 
 # Defined units
 UNITS_MAPPING = [
